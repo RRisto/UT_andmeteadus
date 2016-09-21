@@ -1,0 +1,22 @@
+{
+    "contents" : "",
+    "created" : 1434296486515.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "B7ECC8CF",
+    "lastKnownWriteTime" : 7741240723082584096,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "caption" : "tabel",
+        "contentUrl" : "content?title=tabel&file=c32f4009d7ff4a9aa6ec68835b5aca62.htm",
+        "displayedObservations" : "2",
+        "displayedVariables" : 4,
+        "totalObservations" : "2",
+        "variables" : "4"
+    },
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}

@@ -1,0 +1,208 @@
+---
+title: "Kodutöö 1"
+author: "Risto Hinno"
+date: "Friday, May 01, 2015"
+output: html_document
+---
+
+
+##Suurimad tõusjad
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+andmed_alg=read.csv("aktsiad.csv", sep=";")
+#teen originaalist koopia, mida siin kasutan
+andmed=andmed_alg
+library(dplyr)
+#kolme parima tootlusega firma symbol, nimi ja tootlus
+parim_tootlus=andmed %>%
+    select(symbol,nimi, tootlus)%>%
+    arrange(desc(tootlus))%>%
+    head(3)
+library(knitr)
+kable(parim_tootlus)
+```
+
+Võttes aluseks 01.05.2015 yahoo andmed:
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE, error=FALSE,cache=TRUE, include=FALSE}
+
+#funktsioon, et andmedyahoost tõmmata ja kokku mergida
+andmed_yahoost = function(algfail){
+    #library(dplyr)
+    library("quantmod")
+    #võtame symbolid, mille kohta infot tõmmata
+    symbols=unique(algfail$symbol)
+    symbols=as.character(symbols)
+    #tõmbame andmed yahoost
+    data=getQuote(symbols,src = "yahoo",
+                  what=yahooQF(c("Last Trade (Price Only)",
+                                 "Symbol","Change in Percent",
+                                 "Volume", 
+                                 "Earnings/Share", 
+                                 "Dividend/Share")))
+    #võtame algfailist ainult vajalikud andmed
+    andmed_select=select(algfail, symbol, nimi, sektor, aktsiate_arv)
+    #väiketähtdeks columnite nimed (vaja et kokku mergida)
+    names(data)=tolower(names(data))
+    #mergime kokku
+    andmed_merge=merge(andmed_select, data, by="symbol")
+    #teeme nimed korda
+    names(andmed_merge)=c("symbol", "nimi", "sektor","aktsiate_arv", "trade time", "hind", "tootlus", "kogus", "kasum_aktsia_kohta","dividend_aktsia_kohta")
+    #võtame tootlusest sodi välja
+    andmed_merge$tootlus=gsub("\\+","", andmed_merge$tootlus)
+    andmed_merge$tootlus=gsub("\\-","", andmed_merge$tootlus)
+    andmed_merge$tootlus=gsub("\\%","", andmed_merge$tootlus)
+    #teeme numericuks
+    andmed_merge$tootlus=as.numeric(as.character(andmed_merge$tootlus))
+
+    andmed_merge
+}
+
+andmed_yahoo=andmed_yahoost(andmed)
+parim_tootlus_y=andmed_yahoo %>%
+    select(symbol,nimi, tootlus)%>%
+    arrange(desc(tootlus))%>%
+    head(3)
+library(knitr)
+tulem=kable(parim_tootlus_y)
+```
+`r tulem`
+
+##Suurimad kukkujad
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#kolme halvima tootlusega firma symbol, nimi ja tootlus
+halvim_tootlus=andmed %>%
+    select(symbol,nimi, tootlus)%>%
+    arrange(tootlus)%>%
+    head(3)
+library(knitr)
+kable(halvim_tootlus)
+```
+
+Võttes aluseks yahoo andmed:
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#kolme halvima tootlusega firma symbol, nimi ja tootlus
+halvim_tootlus_y=andmed_yahoo %>%
+    select(symbol,nimi, tootlus)%>%
+    arrange(tootlus)%>%
+    head(3)
+library(knitr)
+kable(halvim_tootlus_y)
+```
+
+
+##Ülevaade sektorite lõikes
+```{r, echo=FALSE}
+#teeme hinna factorist numericuks
+andmed$hind=as.numeric(as.character(andmed$hind))
+#arvutame juurde käibe
+andmed=mutate(andmed, kaive=hind*kogus)
+#grupeerime sektori järgi
+sektori_grupp=group_by(andmed, sektor)
+#arvutame kesk. tootluse, kogukäibe, kesk. käibe ja ettev. arvu
+sektori_loikes <- summarise(sektori_grupp,
+                            keskmine_tootlus=mean(tootlus, na.rm=T),
+                            kogukaive=sum(kaive, na.rm=T),
+                            keskmine_kaive=mean(kaive, na.rm=T),
+                            ettevotete_arv=n())
+sektori_loikes=filter(sektori_loikes, ettevotete_arv>=30)
+kable(sektori_loikes)
+```
+
+Võttes aluseks yahoo andmed:
+```{r, echo=FALSE, include=FALSE}
+#teeme hinna factorist numericuks
+andmed_yahoo$hind=as.numeric(as.character(andmed_yahoo$hind))
+#teeme koguse ka numericuks
+andmed_yahoo$kogus=as.numeric(as.character(andmed_yahoo$kogus))
+#arvutame juurde käibe
+andmed_yahoo=mutate(andmed_yahoo, kaive=hind*kogus)
+#grupeerime sektori järgi
+sektori_grupp_yahoo=group_by(andmed_yahoo, sektor)
+#arvutame kesk. tootluse, kogukäibe, kesk. käibe ja ettev. arvu
+sektori_loikes_yahoo <- summarise(sektori_grupp_yahoo,
+                            keskmine_tootlus=mean(tootlus, na.rm=T),
+                            kogukaive=sum(kaive, na.rm=T),
+                            keskmine_kaive=mean(kaive, na.rm=T),
+                            ettevotete_arv=n())
+sektori_loikes_yahoo=filter(sektori_loikes_yahoo, ettevotete_arv>=30)
+tulem2=kable(sektori_loikes_yahoo)
+```
+`r tulem2`
+
+##Kauplemisalgoritm
+
+Kirjuta funktsioon kauplemisalgoritm, mille sisendiks on andmestik data ja mis tagastab kolme kõige atraktiivsema ettevõtte sümbolid, mis saavadki ostusoovitusteks.
+
+Juhised:
+
+Kõigepealt tekita andmestikku juurde järgmised kaks tunnust:
+
+- kasumi-aktsiahinna suhe (kasum_aktsia_kohta/hind) [kui sa tead, mida tähendab PE suhe, siis me arvutame PE suhte pöördväärtust]
+
+- dividendi määr (dividend_aktsia_kohta/hind)
+
+Arvuta iga aktsia kohta atraktiivsuse skoor, mis on arvutatud järgnevalt 0.5 * kasumi-aktsiahinna suhe + 0.5 * dividendi määr
+
+Ostusoovituseks leia kolm kõige suurema skooriga aktsiat.
+
+Kui eelnevaga oled hakkama saanud, siis proovi eelnev kood kirjutada funktsiooniks, mis võtab sisendiks suvalise andmestiku ning väljastab kolme kõige atraktiivsema ettevõtte aktsiate sümbolid vektorina. (Näpunäide: Kui meil on andmetabel df, siis sealt saab veeru tunnus vektorina välja võtta dollarimärgiga df$tunnus.)
+
+```{r, echo=FALSE}
+#teeme ka need factoriks
+andmed$kasum_aktsia_kohta=as.numeric(as.character(andmed$kasum_aktsia_kohta))
+andmed$dividend_aktsia_kohta=as.numeric(as.character(andmed$dividend_aktsia_kohta))
+
+#arvutame juurde vajalikud muutujad
+andmed=mutate(andmed, 
+              kasum_aktsiahinna_suhe=kasum_aktsia_kohta/hind,
+              dividendi_maar=dividend_aktsia_kohta/hind)
+andmed=mutate(andmed, atraktiivsus_skoor=0.5*kasum_aktsiahinna_suhe+0.5*dividendi_maar)
+andmed=arrange(andmed, desc(atraktiivsus_skoor))
+#andmed$symbol [1:3]
+```
+
+```{r, echo=FALSE}
+#funktsioon
+kauplemisalgoritm = function(x){
+    x$kasum_aktsia_kohta=as.numeric(as.character(x$kasum_aktsia_kohta))
+    x$dividend_aktsia_kohta=as.numeric(as.character(x$dividend_aktsia_kohta))
+    
+    #arvutame juurde vajalikud muutujad
+    x=mutate(x, 
+                  kasum_aktsiahinna_suhe=kasum_aktsia_kohta/hind,
+                  dividendi_maar=dividend_aktsia_kohta/hind)
+    x=mutate(x, atraktiivsus_skoor=0.5*kasum_aktsiahinna_suhe+0.5*dividendi_maar)
+    x=arrange(x, desc(atraktiivsus_skoor))
+    x$symbol [1:3]
+}
+
+#kauplemisalgoritm(andmed)
+```
+
+##Turvaline kauplemisalgoritm
+
+Nüüd kirjuta funktsioon kauplemisalgoritm_turvaline, kus valid atraktiivseid aktsiaid vaid populaarsete aktsiate hulgast. Populaarsed aktsiad on järgnevad: AAPL, FB, GOOG, IBM, TSLA.
+
+Juhised:
+
+- Vali andmestikust välja ainult aktsiad AAPL, FB, GOOG, IBM, TSLA. Rakenda saadud alamandmestikul eelnevas ülesandes kirjutatud funktsiooni.
+
+- Kui eelnev töötab, siis kirjuta eelnev kood funktsiooniks.
+
+```{r, echo=FALSE}
+andmed2=andmed_alg
+andmed2=filter(andmed2, symbol %in% c("AAPL", "FB", "GOOG", "IBM", "TSLA"))
+#kauplemisalgoritm(andmed2)
+
+#teen funktsiooniks
+kauplemisalgoritm_turvaline = function(x){
+  x=filter(x, symbol %in% c("AAPL", "FB", "GOOG", "IBM", "TSLA"))
+  kauplemisalgoritm(x)
+}
+#testime, kas saame sama tulemuse
+vastus=kauplemisalgoritm_turvaline(andmed)
+```
+
+Seega tasub osta neid aktsiaid: `r vastus`.

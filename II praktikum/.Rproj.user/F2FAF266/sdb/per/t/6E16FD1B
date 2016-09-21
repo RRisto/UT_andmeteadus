@@ -1,0 +1,25 @@
+{
+    "contents" : "",
+    "created" : 1465557748867.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "6E16FD1B",
+    "lastKnownWriteTime" : 7011605692497750387,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "7yybyyklt3",
+        "caption" : "maksud",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=maksud&cache_key=7yybyyklt3",
+        "displayedObservations" : "112366",
+        "environment" : "",
+        "object" : "maksud",
+        "totalObservations" : "112366",
+        "variables" : "7"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}

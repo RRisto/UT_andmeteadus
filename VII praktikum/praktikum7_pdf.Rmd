@@ -1,0 +1,487 @@
+---
+title: "Kuidas biomarkerite abil ennustada surma?"
+author: "Risto Hinno"
+date: "Friday, June 26, 2015"
+output: pdf_document
+---
+
+##Sissejuhatus
+
+Geenitehnoloogiat tudeeriv Elo “Elu” Eliksiir on kuulnud, et ka geneetika valdkonnas leidub edukaid ettevõtteid, nagu näiteks 23andMe, mis annab inimesele teada tema riski haigestuda erinevatesse haigustesse. Sestap plaanib ta teha idufirma, mis teeniks tulu inimese surma prognoosimisega. Täpsemalt, inimeselt võetaks vereproov, ning selle tulemuste põhjal öeldaks talle, milline on tema tõenäosus surra järgneva 5 aasta jooksul.
+
+Et kirjutada taotlus rahastuse saamiseks, on tal esmalt vaja välja mõelda, millel see suremuse test üldse peaks põhinema. See tähendab, et millise ühendi sisaldust vereproovist oleks vaja mõõta? Ta leidis, et Geenivaramu teadlased eesotsas Krista Fischeriga (TÜ statistika vilistlane) on 2014. aastal avaldanud teadusartikli [Biomarker Profiling by Nuclear Magnetic Resonance Spectroscopy for the Prediction of All-Cause Mortality: An Observational Study of 17,345 Persons](http://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.1001606).
+
+Selle praktikumis uurimegi, kas ja kuidas saab biomarkerite abil ennustada surma. Meil on kasutada valim Geenivaramu andmestikust, mis sisaldab 5000 inimese verest mõõdetud 106 biomarkeri väärtuseid.
+
+Aga mis üleüldse on biomarker?
+
+_A biomarker is a biological molecule found in blood, body fluids, or tissues that may signal an abnormal process, a condition, or a disease. The level of a particular biomarker may indicate a patient’s risk of disease, or likely response to a treatment. For example, cholesterol levels are measured to assess the risk of heart disease._
+
+
+##Andmestik
+
+Kasutame valimit Geenivaramu andmestikust, mida kasutati eelnevalt mainitud teadusartikli juures. Täpsemalt on andmestikus tunnused:
+
+- sugu
+
+- vanusgrupp
+
+- s5 - indikaator, kas 5 aasta pärast oli surnud
+
+- hyp - kas inimesel on hüpertooniatõbi ehk kõrgvererõhutõbi
+
+- suits - kas on suitsetaja
+
+- LDL_D - esimese biomarkeri väärtus
+
+- L_HDL_FC - teise biomarkeri väärtus
+
+- …
+
+- Cit - viimase biomarkeri väärtus
+
+Laadi ÕISist alla andmestik _biomarkerid.csv_ ja loe töökeskkonda.
+
+Analüüsi lihtsuse huvides eemalda puuduvaid andmeid sisaldavad read. Abiks on funktsioon complete.cases.
+
+```{r, cache=TRUE, message=FALSE, warning=FALSE}
+biomarkerid=read.csv("./data/biomarkerid.csv")
+biomarkerid=biomarkerid[complete.cases(biomarkerid),]
+
+```
+
+
+##Kui hästi on kolesterooli abil võimalik ennustada surma?
+
+Elo tutvus Geenivaramu andmestikuga, ent seal oli palju arusaamatute lühenditega biomarkereid. Samas on ta kuulnud, et kolesterool on üks nendest näitajatest, mille näit peab tingimata korras olema. Ehk saaks kolesterooli põhjal hästi prognoosida surma?
+
+Eralda andmestikust alamandmestik, mis sisaldaks tunnuseid sugu, vanusgrupp, s5, hyp, suits ning järgmisi biomarkereid:
+
+- Serum_C - üldkolesterool
+
+- HDL_C - HDL kolesterool (“hea”)
+
+- LDL_C - LDL kolesterool (“halb”)
+
+```{r, message=FALSE, cache=TRUE}
+biom_subset=biomarkerid[, c("sugu", "vanusegrupp", "s5", "hyp", "suits", 
+                            "Serum_C", "HDL_C", "LDL_C")]
+```
+
+##Ülesanne 1 (2 punkti) - kolesterool soo ja vanusegruppide lõikes
+
+Tutvu andmestikuga ja selgita välja, kuidas on kodeeritud tunnus sugu (kas 0 tähistab meest või naist)?
+
+Visualiseeri, kuidas nende 3 biomarkeri jaotused erinevad soo ja vanusegruppide lõikes.
+```{r, cache=TRUE, message=FALSE}
+library(ggplot2)
+ggplot(biom_subset, aes(x=factor(sugu), y=Serum_C))+
+    geom_boxplot()
+#HDL_C
+ggplot(biom_subset, aes(x=factor(sugu), y=HDL_C))+
+    geom_boxplot()
+#LDL_C
+ggplot(biom_subset, aes(x=factor(sugu), y=LDL_C))+
+    geom_boxplot()
+
+#vanusegrappide lõikes
+ggplot(biom_subset, aes(x=factor(sugu), y=Serum_C))+
+    geom_boxplot()+
+    facet_wrap(~vanusegrupp)
+
+#HDL_C
+ggplot(biom_subset, aes(x=factor(sugu), y=HDL_C))+
+    geom_boxplot()+
+    facet_wrap(~vanusegrupp)
+#LDL_C
+ggplot(biom_subset, aes(x=factor(sugu), y=LDL_C))+
+    geom_boxplot()+
+    facet_wrap(~vanusegrupp)
+
+```
+
+Tundub, et 1 on naine ja 0 mees, kuna naisi on artikli põhjal andmestikus rohkem.
+
+##Ülesanne 2 (4 punkti) - surma prognoosimine kolesterooli abil?
+
+Uuri, kas kolesterool võimaldab prognoosida surma. Selleks tuleb andmetele sobitada mudel.
+
+- Visualiseeri, kas kolesterooli (Serum_C, HDL_C, LDL_C) abil võiks saada prognoosida surma.
+
+```{r, cache=TRUE, message=FALSE}
+ggplot(biom_subset, aes(x=factor(s5), y=Serum_C))+
+    geom_boxplot()
+#HDL_C
+ggplot(biom_subset, aes(x=factor(s5), y=HDL_C))+
+    geom_boxplot()
+#LDL_C
+ggplot(biom_subset, aes(x=factor(s5), y=LDL_C))+
+    geom_boxplot()
+
+```
+
+Mingi erinevus on, kuid väga kindlalt erinevust välja ei loe.
+
+- Tundub, et joonisest ei piisa ning tuleb pöörduda statistiliste mudelite juurde. Kas kasutad lineaarset või logistilist regressiooni? Miks?
+
+- Sobitasime mudeli glm(s5 ~ HDL_C, family=binomial, data=data) ning selgus, et HDL_C on oluline surma prognoosimisel. Seejärel aga sobitasime mudeli glm(s5 ~ HDL_C + sugu, family=binomial, data=data), siis miskipärast HDL_C enam ei ole oluline. Selgita, mis värk on. Kas siis kokkuvõttes on oluline või mitte?
+
+```{r, cache=TRUE}
+mudel1=glm(s5 ~ HDL_C, family=binomial, data=biom_subset)
+summary(mudel1)
+
+mudel2=glm(s5 ~ HDL_C + sugu, family=binomial, data=biom_subset)
+summary(mudel2)
+
+```
+
+Oleneb mudelist, mida kasutame. Ilma soota prognoosib päris hästi surma. Kuid kui korrigeerime seda sooga, siis enam ei selgita, sugu selgitab paremini varieeruvust.
+
+
+- Sobita kolm mudelit, et uurida kolesterooli (tunnuste Serum_C, HDL_C ja LDL_C) seost surmaga. Muide, kas lisad mudelitesse ka tunnused sugu, vanusegrupp, suits ja hyp? Põhjenda oma otsust.
+
+```{r, cache=TRUE}
+mudel3=glm(s5 ~ Serum_C+ HDL_C + LDL_C, family=binomial, data=biom_subset)
+summary(mudel3)
+
+```
+ Ei lisanud, sest siis poleks ükski marker olnud statistiliselt oluline.
+
+- Milline on tulemus, st kas siis mõni kolmest kolesterooli tunnusest on olulise mõjuga surma ennustamisel?
+
+Jah, HDL_C on oluline.
+
+
+#Kogu andmestikul põhinev analüüs
+
+Eelnimetatud teadusartiklis vaadeldi kõiki 106 biomarkerit. Tegelenud esialgu kolme biomarkeriga, saime tuttavaks logistilise regressiooniga R-is ning julgeme nüüd asuda artiklis kirjeldatud analüüsi reprodutseerima. Kõigis järnevates ülesannetes kasutame kogu andmestikku (st kõiki 106 biomarkerit).
+
+##Ülesanne 3 (1 punkt) - korrelatsioonid biomarkerite vahel
+
+Tee joonis, mis annaks hästi edasi, kas ja millised biomarkerid on omavahel korreleeritud. (Näpunäide: Arvuta korrelatsioonimaatriks käsuga cor ning visualiseeri seda.) Interpreteeri, milliseid mustreid ja seoseid näed?
+
+```{r, cache=TRUE,message=FALSE}
+korrel_maatriks=cor(biomarkerid[6:111])
+
+library(pheatmap)
+pheatmap(korrel_maatriks, cluster_rows=FALSE, cluster_cols=FALSE)
+
+```
+
+##Ülesanne 4 (1 punkt) - Oluliste biomarkeri tuvastamine
+
+Milline biomarker aitab kõige paremini ennustada surma kui võtame arvesse vanuse ja soo mõju?
+
+Selleks sobita mudelid
+
+- s5 ~ sugu + vanusegrupp + biomarker_1
+
+- s5 ~ sugu + vanusegrupp + biomarker_2
+
+- …
+
+- s5 ~ sugu + vanusegrupp + biomarker_106
+
+ja iga biomarkeri korral eralda mudelist selle p-väärtus ja kordaja.
+
+Kui sa ei soovi 106 korda glm mudelit käsitsi jooksutada ja manuaalselt p-väärtuseid välja noppida, siis automatiseeri see (näiteks for tsükli abil).
+```{r, cache=TRUE, message=FALSE}
+biomarkers = names(biomarkerid)[6:111]
+formula0 = "s5 ~ sugu + vanusegrupp"
+
+for (i in 1:length(biomarkers)) {
+    formula = paste(formula0, biomarkers[i], sep=" + ")
+    model = glm(formula, family=binomial, data=biomarkerid)
+    summary_table = coef(summary(model))
+    pvalue[i] = summary_table[nrow(summary_table), 4]
+    estimate[i] = summary_table[nrow(summary_table), 1] 
+}
+#vähem arve pärast komakohti
+pvalue=round(pvalue, 4)
+estimate=round(estimate, 4)
+tulemid=data.frame(biomarkers, pvalue, estimate)
+head(tulemid)
+```
+
+##Ülesanne 5 (1 punkt)
+
+Kirjuta eelnev kood funktsiooniks.
+
+```{r, cache=TRUE, message=FALSE}
+estimate_significance = function(formula0, biomarkers, data){
+    coefs=list()
+    pvalues=list()
+    for (i in 1:length(biomarkers)) {
+        formula = paste(formula0, biomarkers[i], sep=" + ")
+        model = glm(formula, family=binomial, data=data)
+        summary_table = coef(summary(model))
+        pvalues[i] = summary_table[nrow(summary_table), 4]
+        coefs[i] = summary_table[nrow(summary_table), 1] 
+    }
+    #vähem arve pärast komakohti
+    pvalues=round(as.numeric(pvalues), 10)
+    coefs=round(as.numeric(coefs), 6)
+    tulemid=data.frame(biomarkers, pvalues, coefs)
+    
+    return(tulemid)
+}
+#testin
+head(estimate_significance(formula0="s5 ~ sugu + vanusegrupp", 
+                      biomarkers=c("LDL_D", "HDL_C"), data=biomarkerid))
+
+```
+
+##Ülesanne 6 (1 punkt)
+
+Visualiseeri saadud tulemust. 
+
+```{r, cache=TRUE, message=FALSE}
+hinnangud=estimate_significance(formula0="s5 ~ sugu + vanusegrupp", 
+                      biomarkers=names(biomarkerid)[6:111], data=biomarkerid)
+#Visualiseeri saadud tulemust.
+library(ggplot2)
+#leaime õige järjekorra
+jrk=with(hinnangud, reorder(biomarkers, pvalues, mean))
+#plotime
+ggplot(hinnangud, aes(x=jrk, y=log(pvalues)))+
+    geom_point()+
+    geom_hline(yintercept=log(0.05), colour="red")+
+    theme(axis.text.x=element_text(angle=90))
+
+```
+
+##Ülesanne 7 (4 punkti + 1 boonuspunkt) - p-väärtuse piiri paikapanek
+
+Nüüd saime kõigi biomarkerite jaoks teada p-väärtused. Jääb veel küsimus, millised neist peaksime liigitama olulisteks.
+
+Kuna testisime kõigi 106 biomarkeri olulisust surma ennustamisel, puutume kokku mitmese testimise probleemiga. Vaata selle kohta koomiksit [“Significant”](https://xkcd.com/882/) ning uuri materjalist [http://www.stat.berkeley.edu/~mgoldman/Section0402.pdf](http://www.stat.berkeley.edu/~mgoldman/Section0402.pdf) mitmese testimise ja Bonferroni korrektsiooni kohta.
+
+- (1 punkt) Selgita, milles seisnes koomiksi idee. Idee seisneb selles, et mida rohkem teha statistilisi teste, siis tõenäosus, et saadakse valepositiivne, kasvab.
+
+- (1 punkt) Artiklis kasutati olulisuse nivood p < 0.0005. Täpsemalt,
+
+    _… significant at the Bonferroni-corrected threshold of p<0.0005, accounting for testing of 106 candidate biomarkers_
+
+- Selgita, miks kasutati sellist p-väärtuse piiri (aga mitte klassikalist p < 0.05)? kasutati Bonferroni korrektsiooni (0.05/106 on ligikaudu 0.0005), et kontrollida valepositiivsete tulemuste hulka.
+```{r, cache=TRUE}
+ggplot(hinnangud, aes(x=jrk, y=log(pvalues)))+
+    geom_point()+
+    geom_hline(yintercept=log(0.0005), colour="red")+
+    theme(axis.text.x=element_text(angle=90))
+
+```
+
+
+- (2 punkti) Veendumaks, et p < 0.05 kasutamisel võime tõepoolest saada liiga palju valepositiivseid tulemusi, tekita andmestik, kus puudub seos tunnuse s5 ja biomarkerite vahel. Selleks tekita uus tunnus, kus oleks s5 väärtuseid permuteeritud suvaliselt. Sobita nüüd mudelid, kus prognoosiksid permuteeritud s5 väärtuseid biomarkerite põhjal (selleks võid kasutada ülesandes 5 kirjutatud funktsiooni).
+
+```{r, cache=TRUE, message=FALSE}
+set.seed(100)
+biomarkerid$s5_permut=sample(biomarkerid$s5, replace=T)
+#names(biomarkerid)
+
+hinnangud_permut=estimate_significance(formula0="s5_permut ~ sugu + vanusegrupp", 
+                                biomarkers=names(biomarkerid)[6:111], 
+                                data=biomarkerid)
+#leiame faktorite õige järjekorra
+jrk_permut=with(hinnangud_permut, reorder(biomarkers, pvalues, mean))
+#plotime
+ggplot(hinnangud_permut, aes(x=jrk_permut, y=log(pvalues)))+
+    geom_point()+
+    geom_hline(yintercept=log(0.05), colour="red")+
+    theme(axis.text.x=element_text(angle=90))
+
+```
+
+- Mitme biomarkeri p-väärtused tulid väiksemad kui 0.05?
+
+```{r, cache=TRUE}
+nrow(subset(hinnangud_permut,pvalues<0.05))
+
+```
+
+- Aga mitu tükki olid olulised Bonferroni korrektsiooni järgi?
+
+```{r, cache=TRUE}
+ggplot(hinnangud_permut, aes(x=jrk_permut, y=log(pvalues)))+
+    geom_point()+
+    geom_hline(yintercept=log(0.0005), colour="red")+
+    theme(axis.text.x=element_text(angle=90))
+
+nrow(subset(hinnangud_permut,pvalues<0.0005)) #0
+
+```
+
+- Mitut olulist p-väärtust oleksid oodanud kummalgi juhul? Selgita. Esimesel juhul 106 x 0,05 = 5.3, teisel juhul 106 x 0.0005 = 0.053
+
+
+- (1 boonuspunkt) Korda permuteerimist 100 korral ning tee kokkuvõte tulemustest.
+
+```{r, cache=TRUE, message=FALSE, warning=FALSE}
+tavaline=list()
+bonf=list()
+#aeglane, 20min teeb!
+for (i in 1:100) {
+    
+    biomarkerid$s5_permut=sample(biomarkerid$s5, replace=T)
+    pvaartused=estimate_significance(formula0="s5_permut ~ sugu + vanusegrupp", 
+                                           biomarkers=names(biomarkerid)[6:111], 
+                                           data=biomarkerid)[,2]
+    tavaline[i]=summary(pvaartused<0.05)[3] 
+    bonf[i]=summary(pvaartused<0.0005)[3] 
+}
+
+hist(as.numeric(tavaline),  freq=FALSE, breaks=40)
+hist(as.numeric(bonf), freq=FALSE, breaks=40)
+
+simul=data.frame(as.numeric(tavaline),as.numeric(bonf))
+summary(simul)
+
+```
+
+
+##Ülesanne 8 (1 punkt) - alternatiiv Bonferroni korrektsioonile
+
+Ülesandes 3 nägime, et mitmed biomarkerid on omavahel tugevalt korreleeritud. Niisiis võib Bonferroni korrektsioon osutuda praegu liiga rangeks. Alternatiivselt võiksime leida, kui suur on meie andmestikus mittekorreleeritud tunnuste arv, ning teha nende arvu järgi Bonferroni korrektsiooni. Selleks, et leida andmestiku nn “efektiivne dimensionaalsus”, kasuta PCA-d.
+
+Juhised:
+
+- Rakenda andmestikul PCA-d ning leia, mitu peakomponenti seletavad näiteks 99% variatsioonist.
+
+- Leitud peakomponentide arv näitabki ligikaudu sõltumatute tunnuste arvu meie andmestikus. Tee Bonferroni korrektsioon selle arvu järgi. Millise p-väärtuse piiri saad?
+
+```{r, cache=TRUE, message=FALSE}
+pca = prcomp(biomarkerid[, 6:111])
+pca_sum=summary(pca)
+pca_sum
+```
+
+Umbes 24 muutujat selgitab 99% variatsioonist ära. sellel juhul saan bonferroni korrektsiooni p-väärtuseks 0.05/24=0.00208.
+
+
+##Boonusülesanne 1 (2 punkti) - usaldusintervallid kordajate jaoks
+
+(1 boonuspunkt) Muuda funktsiooni estimate_significance selliselt, et iga biomarkeri kordajale arvutad ka 95% usaldusintervalli. Võid kasutada normaaljaotusel põhinevat lähendit ning arvutada selle kordaja_hinnang +- 1.96 * SE, kus SE on summary(model) väljundis toodud Std. Error. Funktsiooni tagastatavas andmetabelis peaksid nüüd olema ka veerud lower ja upper.
+
+```{r, cache=TRUE, message=FALSE}
+estimate_significance2 = function(formula0, biomarkers, data){
+    coefs=list()
+    pvalues=list()
+    upper=list()
+    lower=list()
+    for (i in 1:length(biomarkers)) {
+        formula = paste(formula0, biomarkers[i], sep=" + ")
+        model = glm(formula, family=binomial, data=data)
+        summary_table = coef(summary(model))
+        pvalues[i] = summary_table[nrow(summary_table), 4]
+        coefs[i] = summary_table[nrow(summary_table), 1] 
+        upper[i]=summary_table[nrow(summary_table), 1]+summary_table[nrow(summary_table), 2]*1.96
+        lower[i]=summary_table[nrow(summary_table), 1]-summary_table[nrow(summary_table), 2]*1.96
+        
+    }
+    pvalues=round(as.numeric(pvalues), 10)
+    coefs=round(as.numeric(coefs), 6)
+    upper=round(as.numeric(upper), 6)
+    lower=round(as.numeric(lower), 6)
+    tulemid=data.frame(biomarkers, pvalues, coefs, upper, lower)
+    return(tulemid)
+}
+
+#test
+tulem2=estimate_significance2(formula0="s5 ~ sugu + vanusegrupp", 
+                      biomarkers=names(biomarkerid)[6:111], data=biomarkerid)
+
+
+```
+
+(1 boonuspunkt) Visualiseeri tulemust (näiteks iga biomarkeri kohta näita kordaja hinnangut koos usaldusintervalliga).
+```{r, cache=TRUE, message=FALSE}
+ggplot(tulem2, aes(x=biomarkers, ymax=upper, ymin=lower, y=coefs))+
+    geom_pointrange(aes(fill=coefs), shape=21)+
+    guides(fill=FALSE)
+
+```
+
+
+##Ülesanne 9 (1 punkt) - forward selection
+
+Artiklis on kirjeldatud mudeli koostamist järgnevalt:
+
+_For biomarker discovery in the Estonian Biobank cohort, a multivariate model was derived in a forward stepwise fashion (Figure 2). First, the biomarker leading to the smallest p-value in the model adjusted for age and sex only was included as a predictor. Subsequently, the biomarker leading to the smallest p-value in the multivariate model adjusted for age, sex, and the first biomarker was included in the prediction model. The process was repeated until no additional biomarkers were significant at the Bonferroni-corrected threshold of p<0.0005, accounting for testing of 106 candidate biomarkers._
+
+Eelmistes ülesannetes leidsid kõige olulisema p-väärtusega biomarkeri. Jätka nüüd forward selection-iga:
+
+- Lisa leitud biomarker mudelisse ning lähtu mudelist s5 ~ sugu + vanusegrupp + kõige_olulisem_biomarker
+
+- Kasuta funktsiooni estimate_significance ning leia nüüd järgmine biomarker, mis mudelisse lisada.
+
+- Jätka senikaua, kuni mudelisse lisatavad biomarkerite p-väärtused on väiksemad kui sinu määratud piir.
+
+Artiklis saadi sellise protsessi tulemusena 4 olulist biomarkerit: Alb, VLDL_D, Gp, Cit. Kas said samasugused?
+
+```{r, cache=TRUE, message=FALSE}
+esimene=estimate_significance(formula0="s5 ~ sugu + vanusegrupp", 
+                      biomarkers=names(biomarkerid)[6:111], data=biomarkerid)
+head(esimene[order(esimene$pvalues),])
+teine=estimate_significance(formula0="s5 ~ sugu + vanusegrupp + Alb", 
+                              biomarkers=names(biomarkerid)[6:111], data=biomarkerid)
+head(teine[order(teine$pvalues),])
+kolmas=estimate_significance(formula0="s5 ~ sugu + vanusegrupp + Alb + Gp", 
+                            biomarkers=names(biomarkerid)[6:111], data=biomarkerid)
+head(kolmas[order(kolmas$pvalues),])
+neljas=estimate_significance(formula0="s5 ~ sugu + vanusegrupp + Alb + Gp + Cit", 
+                             biomarkers=names(biomarkerid)[6:111], data=biomarkerid)
+head(neljas[order(neljas$pvalues),])
+
+```
+
+Sain samad, peale VLDL_D (mul pole ka originaalandmed, need on nati permuteeritud).
+
+##Ülesanne 10 (1 punkt) - surma tõenäosuse prognoosimine
+
+Eelmise ülesande tulemusena on sul nüüd olemas lõplik mudel, mis võtab arvesse kõik, mis on oluline surma tõenäosuse prognoosimiseks. Prognoosi iga andmestikus oleva inimese kohta tema tõenäosust surra 5 aasta jooksul ja visualiseeri tulemust (näiteks histogrammi abil)
+
+```{r, cache=TRUE}
+model = glm(s5 ~ sugu + vanusegrupp + Alb + Gp + Cit, 
+            family=binomial, data=biomarkerid)
+newdata = biomarkerid[,c("s5", "sugu", "vanusegrupp", "Alb", "Gp", "Cit")]
+# On oluline, et newdata sisaldaks kindlasti kõik need veerud, mida on 
+#vaja prognoosimisel
+predicted_probabilities = predict(model, newdata=newdata, type = "response")
+hist(predicted_probabilities)
+
+```
+
+
+##Boonusülesanne 2 (2 punkti) - prognooside täpsus
+
+Eelmises ülesandes prognoosisid surma tõenäosust. Aga mida hakkab tavainimene peale tõenäosusega? Olgem ikka konkreetsed, kas siis sureb 5 aasta jooksul või mitte.
+
+Selleks otsusta piir, millisest väiksemad tõenäosused klassifitseerid ei sure ja suuremad tõenäosused sureb. Kasutades seda piiri ning eelmises ülesandes kirjutatud funktsiooni, arvuta kõigi andmestikus olnud inimeste jaoks 5 aasta jooksul suremise prognoos (justkui meil poleks olnud teada tunnuse s5 väärtus).
+
+Milline on sinu prognooside täpsus (st kui suur osa prognoosidest langes kokku tunnuse s5 väärtusega)?
+
+Võrdlusmomendi saamiseks paku välja veel mingi teine, naiivne klassifitseerija (see võib põhineda ükskõik kui lihtsal reeglil). Milline on selle täpsus?
+
+```{r, cache=TRUE}
+#teeme 0.5 peale
+proov=ifelse(predicted_probabilities<0.5, 0, 1)
+vordlus=data.frame(biomarkerid$s5, proov)
+#kui palju ma puusse panin
+summary(factor(vordlus$biomarkerid.s5-vordlus$proov)) #pole paha, 4.158% viga
+#kui palju surnute osas puusse panin
+surnud=subset(vordlus, biomarkerid.s5==1)
+summary(factor(surnud$biomarkerid.s5-surnud$proov)) #väga perses mudel
+#teeme confusionmatrixi
+library(caret)
+confusionMatrix(vordlus$proov, biomarkerid$s5)
+#Võrdlusmomendi saamiseks paku välja veel mingi teine, naiivne 
+#klassifitseerija (see võib põhineda ükskõik kui lihtsal reeglil). 
+#Milline on selle täpsus?
+#kõige lihtsam, kuna surijaid oli vähe, ennustan kõigile, et jäävad elama
+naive=data.frame(rep.int(0, length(vordlus$proov)))
+naive$s5=biomarkerid$s5
+summary(factor(naive$s5-naive$rep.int.0..length.vordlus.proov..)) #4,4% viga
+
+```
+
+Täpne mudel, kuid kuna surnuid on vähe saaks hea mudeli, kui ennustaks kõigile, et jäävad elama. Surma ette ennustamiseks kehv mudel (seal pani enamikuga puusse).

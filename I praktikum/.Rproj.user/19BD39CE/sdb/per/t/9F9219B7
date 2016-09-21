@@ -1,0 +1,22 @@
+{
+    "contents" : "",
+    "created" : 1430493671439.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "9F9219B7",
+    "lastKnownWriteTime" : 7741240722073845761,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "caption" : "andmed_select",
+        "contentUrl" : "content?title=andmed_select&file=33eba0db39bc4c01ae070bc6664d83d0.htm",
+        "displayedObservations" : 502,
+        "displayedVariables" : 4,
+        "totalObservations" : 502,
+        "variables" : 4
+    },
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}

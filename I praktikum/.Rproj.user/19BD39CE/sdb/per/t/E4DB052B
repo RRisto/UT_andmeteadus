@@ -1,0 +1,22 @@
+{
+    "contents" : "",
+    "created" : 1430477289554.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "E4DB052B",
+    "lastKnownWriteTime" : 7741240723082584096,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "caption" : "andmed",
+        "contentUrl" : "content?title=andmed&file=d9e1635093d4491cbb16e52e7255ac67.htm",
+        "displayedObservations" : "502",
+        "displayedVariables" : 1,
+        "totalObservations" : "502",
+        "variables" : "12"
+    },
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}

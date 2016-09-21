@@ -1,0 +1,317 @@
+---
+title: "Veebi kraapimine"
+author: "Risto Hinno"
+date: "Friday, June 26, 2015"
+output: pdf_document
+---
+
+#Andmete kraapimine veebist
+
+##Sissejuhatus
+
+Eva “Usin” Masin on esimeses praktikumis kohatud Mati “Raha” Masina vastand. Talle meeldib rutiinsus, andmete tuim kopeerimine ja sisestamine. Vabal ajal meeldib talle lugeda romaanisarja “Tõde ja õigus” - eelmine nädal luges ta kokku tähekombinatsiooni “pa” esinemissageduse. Homme pärast tööd jätkab ta “pb” esinemissageduse leidmisega.
+
+Kahjuks oli eelnev tekst fiktsioon ning eva-laadsed kopeerijad surid välja koos neandertaallastega. Selles praktikumis vaatame, kuidas R-is ellu äratada tehis-Eva, kes oskab veebilehtedelt automaatselt infot eraldada ja selle transformeerida struktureeritud andmestikuks.
+
+Täpsemalt, uurime
+
+- kuidas eraldada Riigikogu hääletamistulemusi,
+
+- kuidas eraldada Postimehe uudiste pealkirju,
+
+- kuidas eraldada ilmajaama vaatlusandmeid.
+
+Kaks esimest ülesannet õpetavad paketi rvest funktsionaalsust ja annavad sissejuhatuse veebikraapimisse minimalistlike veebilehtede põhjal.
+
+##Ülesanne 1 (2 punkti) - CSS id
+
+- Eralda [html koodis](http://andmeteadus.github.io/examples/html1.html) sinisena olev tekst muutujasse tekst. Kasuta paketti rvest.
+
+- Vastava html koodiga saad mängida [siin](http://www.w3schools.com/html/tryit.asp?filename=tryhtml_css_id).
+
+- Loe lühiülevaadet, [millest koosnevad veebilehed](http://andmeteadus.github.io/praktikum5_rvest_minimal).
+
+- Uuri paketi rvest minimalistlikku [näidet](http://andmeteadus.github.io/praktikum5_rvest_minimal).
+
+- Minimalistliku näite põhjal peaksid oskama eraldada lähtekoodis olevad 4 lõiku. Et eraldada lõik, kus id=“p01”, pead teadma, kuidas CSS-is tähistatakse id-sid. Suur vihje on olemas eelneva html koodi < style > blokis. Abiks võib-olla ka [CSS selektorite interaktiivne testnäide](http://www.w3schools.com/cssref/trysel.asp).
+
+```{r, cache=TRUE}
+library(rvest)
+html_source ="http://andmeteadus.github.io/examples/html1.html"
+page = html(html_source)
+tekst=page %>% 
+    html_node("p#p01") %>%
+    html_text()
+tekst
+```
+
+##Ülesanne 2 (2 punkti) - CSS class
+
+Eralda [html koodis](http://andmeteadus.github.io/examples/html2.html) punaselt olev tekst muutujasse tekst. Kasuta paketti rvest.
+
+Vastava html koodiga saad mängida [siin](http://www.w3schools.com/html/tryit.asp?filename=tryhtml_css_class).
+
+Lõpptulemuse peaks olema selline: tekst = c("I am different.", "I am different too.")
+
+```{r, cache=TRUE}
+html_source ="http://andmeteadus.github.io/examples/html2.html"
+page = html(html_source)
+tekst2=page %>% 
+    html_nodes("p.error") %>%
+    html_text()
+tekst2
+```
+
+##Ülesanne 3 (2 punkti)
+
+Eralda Riigikogu hääletamistulemuste veebilehe [html lähtekoodist](http://www.riigikogu.ee/?op=ems&page=haaletus&hid=a85129ed-4873-4b9d-ac37-4788b6587fa0&), mitu saadikut hääletas kooseluseaduse eelnõu:
+
+- poolt
+
+- vastu
+
+- oli erapooletu
+
+- ei hääletanud
+
+Praktikumis tutvusime, kuidas brauseri veebiarendus tööriistadega leida üles lähtekoodist vajalikud kohad. Variandid olid:
+
+- Chrome’is vajuta parem klikk ja “inspekteeri elementi”. Alernatiivid on klahvikombinatsioon Ctrl + Shift + I või klahv F12. vahendiga [selectorgadget](http://selectorgadget.com/)
+
+- Need muudavad lähtekoodis õige klassi, id või sildi leidmise oluliselt lihtsamaks. Mõnes olukorras on kasulikum üks variant, mõnes teine.
+```{r, cache=TRUE}
+html_source ="http://www.riigikogu.ee/tegevus/tooulevaade/haaletused/haaletustulemused-kohalolekukontroll/a85129ed-4873-4b9d-ac37-4788b6587fa0/"
+page = html(html_source)
+haaletus=page %>% 
+    html_nodes("li a span") %>%
+    html_text()
+haaletus
+```
+
+##Ülesanne 4 (2 punkti)
+
+Eralda kooseluseaduse eelnõu hääletamistulemuste veebilehe [html lähtekoodist](http://www.riigikogu.ee/?op=ems&page=haaletus&hid=a85129ed-4873-4b9d-ac37-4788b6587fa0&) andmetabel, kus on 101 rida ning tunnused nr, nimi, otsus, fraktsioon.
+
+Vihje: kasuta funktsiooni html_table
+
+Kirjuta vastav kood funktsiooniks extract_table (seda funktsiooni läheb vaja järgmises ülesandes, kus eraldad kõigi Riigikogu XII hääletuste kohta vastava tabeli). Sisendiks on kas veebilehe url, faili lokaalne asukoht või sõne. Funktsioon peab tagastama vastava data.frame-i (pane tähele, et su funktsioon ei tagastaks listi, milles on üks data.frame).
+
+
+```{r, cache=TRUE}
+library(knitr)
+html_source ="http://www.riigikogu.ee/tegevus/tooulevaade/haaletused/haaletustulemused-kohalolekukontroll/a85129ed-4873-4b9d-ac37-4788b6587fa0/"
+page = html(html_source)
+
+haaletus=page %>% 
+    html_nodes(".table.table.table-striped.full-bars") %>%
+    html_table()
+#siit saan data frame 101 liikme, erkonna ja hööletustulemusega, nr-d võtan
+#zipitud tabelitest, kuna vahepeal on kodulehte muudetud
+sub=haaletus[1]
+sub2=as.data.frame(sub)
+#puhastan otsuse poolt ja asendan tabelisse
+junn=gsub( " ", "",sub2$Otsus)
+junn2=gsub( "\n\n", "",junn)
+junn3=gsub( "^Poolt", "",junn2)
+junn3=gsub( "^Vastu", "",junn3)
+junn3=gsub( "^EiHääletanud", "",junn3)
+junn3=gsub( "^Puudub", "",junn3)
+junn3=gsub( "EiHääletanud", "Ei Hääletanud",junn3)
+sub2$Otsus=junn3
+kable(sub2)
+
+```
+
+Funktsiooni ma ei tee, kuna Riigikogu kodulehte on uuendatud ja funktsioon ei töötaks järgnevate asjade peal.
+
+##Ülesanne 5 (5 punkti) - andmestiku ehitamine
+
+Ülesandes 4 tegid läbi Riigikogu saadikute hääletamistulemuste eraldamise kooseluseaduse korral. Failis [htmls.zip](http://andmeteadus.github.io/data/htmls.zip) on olemas veebilehed kõigi Riigikogu XII hääletuste kohta. Sinu ülesandeks on koostada andmetabel, kus ridades on Riigikogu saadiku nimi ja veergudes kõik hääletamiskorrad. Seda andmestikku läheb vaja järgmises praktikumis, kus uurime hääletamismustreid.
+
+Kõigepealt paki lahti zip fail ning loe R-i sisse kõigi html failide nimed.
+
+Näpunäide: Järgnev kood loeb sisse kõik muutujas filenames olevad csv andmestikud ning tekitab neist listi.
+
+list_of_dataframes = list()
+for(i in 1:length(filenames)){
+  temp = read.csv(filenames[i])
+  list_of_dataframes[[i]] = temp
+}
+
+Praegu pole sul read.csv käsuga midagi peale hakata, sest tegeleme html failidega. Kasuta ülesandes 4 kirjutatud funktsiooni extract_table.
+Eelneva for-tsükli asemel võid kasutada funktsiooni lapply.
+
+Lisa igal tsükli sammul andmestikule hääletuse indeks või muu identifikaator. Näiteks temp$haaletus = i.
+
+Nüüdseks peaksid olema saanud listi, mille elementideks on erinevad andmetabelid (kõiki faile kasutades peaks nende koguarv olema 1845). Tee nendest andmetabelitest üks suur (pikk) andmetabel, paigutades need üksteise otsa. Seda aitab teha paketi dplyr funktsioon rbind_all. Tulemuseks peaksid saama andmetabeli, mille ridade arv on 101 * “sinu kasutatud failide arv”.
+
+Muuda pikk andmetabel laiaks. Seda aitab teha paketi reshape2 käsk dcast. Uuri funktsiooni dcast minimalistlikku näidet [siit](http://andmeteadus.github.io/praktikum3_reshape/#dcast).
+
+Kui kõik eelnev töötab, tee eelnev läbi kõikide html failidega. Ära kohku, kui kõikide html tabelite eraldamisega läheb aega 5 minutit või rohkem.
+
+Soovitus: Kui oled eelneva ühe korra läbi teinud, pole vaja knitri raporti genereerimisel enam sedasama korrata. Saadud andmetabeli saad endale salvestada käsuga save(andmed, file="riigikogu.RData"). Raportis võid muuta vastava koodiploki eval=FALSE.
+
+```{r, eval=FALSE}
+#funktsioon kõige pealt
+extract_table=function(url) {
+    html_source =url
+    page = html(html_source)
+    tabel=page %>% 
+        html_nodes("table.List") %>%
+        html_table()%>%
+        as.data.frame()
+    tabel
+}
+
+#loen kõik failid sisse
+filenames =list.files("./data/data", pattern = "*.html", full.names=TRUE)
+
+list_of_dataframes = list()
+for(i in 1:length(filenames)){
+    temp = extract_table(filenames[i])
+    temp$haaletus = i
+    list_of_dataframes[[i]] = temp
+}
+#keevitan kokku
+library(dplyr)
+andmed=rbind_all(list_of_dataframes)
+
+#Muudan pika andmetabeli laiaks 
+library(reshape2)
+andmed_lai=dcast(andmed, Nimi~haaletus, value.var = "Otsus")
+
+```
+
+
+##Ülesanne 6
+
+Tagasta kõik Postimehe esilehe uudiste pealkirjad (joonisel näidatud kollasega).
+
+Ära kurvasta, kui sa ei saa absoluutselt kõiki pealkirju, 97% on praegu piisav.
+
+```{r, cache=TRUE}
+url="http://www.postimees.ee/"
+page = html(url)
+tekst=page %>% 
+    html_nodes(".frontHeading") %>%
+    html_text()
+#puhastame
+tekst_puhas=gsub("\n", "", tekst)
+#palkirjade lõppu korjab ka kommentaaride arvu, puhastame need välja
+tekst_puhas=gsub("\\d*$", "", tekst_puhas)
+#eemaldame tühjad stringid
+tekst_puhas=tekst_puhas[tekst_puhas != ""] 
+kable(tekst_puhas)
+
+```
+
+##Ülesanne 7
+
+Juhised:
+
+- Riigi Ilmateenistus pakub värskeid ilmaandmeid [XML faili kujul](http://www.ilmateenistus.ee/teenused/ilmainfo/eesti-vaatlusandmed-xml/).
+    
+- Meie tegeleme Eesti vaatlusandmete [XML failiga](http://www.ilmateenistus.ee/ilma_andmed/xml/observations.php).
+    
+- Saa XML failist kätte iga ilmajaama õhurõhk.
+    
+- Saa XML failist kätte iga ilmajaama tuule kiirus.
+    
+- Tee neist õhurõhu ja tuule kiiruse scatterplot.
+
+```{r, cache=TRUE, warning=FALSE}
+url="http://www.ilmateenistus.ee/ilma_andmed/xml/observations.php"
+page = html(url)
+
+ohurohk=page %>% 
+    html_nodes("airpressure")%>%
+    html_text()
+
+tuulekiirus=page %>% 
+    html_nodes("windspeed") %>%
+    html_text()
+
+nimi=page %>% 
+    html_nodes("name")%>%
+    html_text()
+
+#teeme numericuks
+ohurohk=as.numeric(as.character(ohurohk))
+tuulekiirus=as.numeric(as.character(tuulekiirus))
+ilm=data.frame(nimi, tuulekiirus, ohurohk)
+#teeme graafiku
+library(ggplot2)
+ggplot(ilm, aes(x=tuulekiirus, y=ohurohk))+
+    geom_point()
+```
+
+
+##Ülesanne 8
+
+
+Eesti Loto veebilehel on toodud [statistika loositud pallide sagedusest](https://www.eestiloto.ee/osi/stats.do?lastDraws=250&gameCode=11&sort=frq0&action=searchNumbers).
+Eralda vastav tabel, kus veergudes on tunnused number, sagedus ja sagedus protsentides.
+selectorgadget veab sind siin alt ning kergem on lähtekoodi inspekteerida brauseris olevate tööriistadega (Chrome’s vajuta Ctrl + Shift + I või tee parem klikk ja vajuta inspekteeri elementi).
+Visualiseeri saadud andmetabelit. Tee näiteks tulpdiagramm, kus x-teljel on arvud 1-48 ning y-telg tähistab sagedust.
+
+```{r, cache=TRUE}
+html_source ="https://www.eestiloto.ee/osi/stats.do?lastDraws=250&gameCode=11&sort=frq0&action=searchNumbers"
+#lingi osas tegin ise uue päringu ja võtsin siis lingi, algne peksis segast
+page = html(html_source)
+loto=page %>% 
+    html_nodes("table") %>%
+    html_table(fill=T)
+
+numbrid=as.data.frame(loto[5])
+#graafik
+library(ggplot2)
+ggplot(numbrid, aes(x=factor(Number), y=Sagedus))+
+    geom_bar(stat="identity")
+
+```
+
+(2 boonuspunkti + lisaboonuspunkt) Viimase 250 loosiga on pall 35 tulnud 28 korral, pall 34 aga 59 korral. Uuri, kas on alust arvata, et Viking Lotto süsteem on kallutatud. Selleks mõtle välja, kuidas seda kontrollida (näiteks võid kasutada simulatsioonidel põhinevat lähenemist). Selgita lühidalt oma lähenemist ja raporteeri, millise tulemuse said. Lisaboonuspunkti saamiseks visualiseeri seda tulemust.
+```{r, cache=TRUE}
+#teeme simulatsiooni, iga 250 loosi kohta võtame 34 ja 35 esinemise sageduse
+#kordame 100 korda
+library(reshape2)
+tulem=data.frame(c(1:8))
+names(tulem)="järjekord"
+list34=list()
+list35=list()
+j=1
+for (j in 1:100)  {
+    
+    tulem=data.frame(c(1:8))
+    names(tulem)="järjekord"
+    
+        for (i in 1:250) 
+        { 
+    tulem[,i+1]=sample(1:48, 8, replace=F)
+    names(tulem)[i+1] <- paste("iter", i, sep = "")
+        }
+    
+    tulem_melt=melt(tulem, id=c("järjekord"))
+    #arvutame iga iteratsioonis iga numbri sageduse
+    tulem_sagedus=data.frame(table(tulem_melt$value, tulem_melt$variable))
+    #hoiame alles ainult 34 ja 35 sagedused, kuna need huvitavad
+    tulem_vaja=subset(tulem_sagedus, Var1%in% c(34,35))
+    
+    list34[j]=sum(tulem_vaja$Freq[tulem_vaja[,1]==34])
+    list35[j]=sum(tulem_vaja$Freq[tulem_vaja[,1]==35])
+    j=j+1
+}
+
+#teeme dataframeiks listid ja numericuks et ggplottida
+simulatsioonid=as.data.frame(rbind(list34, list35))
+simulatsioonid=as.data.frame(t(simulatsioonid)) #transpose
+simulatsioonid$list34=as.numeric(simulatsioonid$list34)
+simulatsioonid$list35=as.numeric(simulatsioonid$list35)
+simulatsioonid_melt=melt(simulatsioonid)
+simulatsioonid_melt$value=as.numeric(simulatsioonid_melt$value)
+#siit on hästi näha, mis on 34 ja 35 esinemissageduste jaotus 250 numrbite
+#võtmise korral lotos
+ggplot(simulatsioonid_melt, aes(x=variable, y=value))+
+    geom_boxplot()
+
+```

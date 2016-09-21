@@ -1,0 +1,22 @@
+{
+    "contents" : "",
+    "created" : 1432485369878.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "DE9338E7",
+    "lastKnownWriteTime" : 7741240723082584096,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "caption" : "vahetajad_kesk_order",
+        "contentUrl" : "content?title=vahetajad_kesk_order&file=0123de87f5274154b05c0aeda6159cb8.htm",
+        "displayedObservations" : 29,
+        "displayedVariables" : 100,
+        "totalObservations" : 29,
+        "variables" : 1847
+    },
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}

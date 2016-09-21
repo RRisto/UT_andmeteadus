@@ -1,0 +1,16 @@
+{
+    "contents" : "\n# This is the user-interface definition of a Shiny web application.\n# You can find out more about building applications with Shiny here:\n#\n# http://shiny.rstudio.com\n#\n\nlibrary(shiny)\n\nshinyUI(fluidPage(\n\n  # Application title\n  titlePanel(\"Rakendus õppeainete valimiseks\"),\n\n  # Sidebar with a slider input for number of bins\n  sidebarLayout(\n    sidebarPanel(\n        # Copy the line below to make a select box \n        selectInput(\"teaduskond\", label = h3(\"Vali teaduskond\"), \n                    choices = list(\"Arstiteaduskond\" = \"AR\", \"Euroopa kolledž\"=\"EC\",\n                               \"Filosoofiateaduskond\"=\"FL\", \n                               \"Kehakultuuriteaduskond\"=\"KK\",    \n                                \"Loodus- ja tehnoloogiateaduskond\"=\"LO\",\n                               \"Majandusteaduskond\"=\"MJ\",\n                               \"Matemaatika-informaatikateaduskond\"=\"MT\",\n                               \"Narva kolledž\"=\"NC\",\n                                \"Õigusteaduskond\"=\"OI\",\n                               \"Pärnu kolledž\"=\"PC\",\n                               \"Sotsiaal- ja haridusteaduskond\"=\"SH\",\n                               \"Usuteaduskond\"=\"US\",\n                               \"Viljandi kultuuriakadeemia\"=\"VK\"), \n                    selected = 1),\n        radioButtons(\"semester\", label = h3(\"Vali semester\"),\n                     choices = list(\"Kevadsemester\" = \"K\", \"Sügissemester\" = \"S\"), \n                     selected = \"K\"),\n        sliderInput(\"slider\", label = h3(\"Kuvatavate õppeainete arv\"), min = 0, \n                    max = 50, value = 25),\n        radioButtons(\"jarjestus\", label = h3(\"Järjestus\"),\n                     choices = list(\"Parimad\" = 0, \"Halvimad\" = 1), \n                     selected = 0)\n    ),\n\n    # Show a plot of the generated distribution\n    mainPanel(\n        h1(\"Sissejuhatus\"),\n        p(\"Aine andmeteadus kodutöö raames tehtav rakendus, mis aitab leida \n            aineid, kus saadi parimaid hindeid.\"),\n        textOutput(\"text1\"),\n        textOutput(\"text2\"),\n        textOutput(\"text3\"),\n        plotOutput(\"plot1\")\n    )\n  )\n))\n",
+    "created" : 1433354142517.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "4261054928",
+    "id" : "D241F135",
+    "lastKnownWriteTime" : 1433587430,
+    "path" : "~/Minu asjad/Statistika, mudelid, excel/R/Andmeteadus_TU/III praktikum/Kodutoo_shiny/ui.R",
+    "project_path" : "ui.R",
+    "properties" : {
+    },
+    "source_on_save" : false,
+    "type" : "r_source"
+}

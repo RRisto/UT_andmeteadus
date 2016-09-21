@@ -1,0 +1,16 @@
+{
+    "contents" : "hinded=read.csv2(\"./data/UT_13_14_hinded.csv\")\nsource(\"helpers.R\")\nlibrary(\"ggplot2\")\nlibrary(\"dplyr\")\nlibrary(\"reshape2\")\nlibrary(\"shiny\")\n\nshinyServer(function(input, output) {\n\n    output$text1 <- renderText({ \n        paste(\"Kasutaja valitud väärtus. Teaduskond:\", input$teaduskond)\n    })\n    output$text2 <- renderText({ \n        paste(\"Kasutaja valitud väärtus. Semester:\", input$semester)\n    })\n    output$text3 <- renderText({ \n        paste(\"Kasutaja valitud väärtus. Semester:\", input$slider)\n    })\n    output$plot1 <- renderPlot({ \n        plot_oppeained(data=hinded, tk=input$teaduskond, sem=input$semester,\n                       nr=input$slider, jrk=input$jarjestus)\n    })\n\n})\n",
+    "created" : 1433354143294.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3268830409",
+    "id" : "A0C01622",
+    "lastKnownWriteTime" : 1433587600,
+    "path" : "~/Minu asjad/Statistika, mudelid, excel/R/Andmeteadus_TU/III praktikum/Kodutoo_shiny/server.R",
+    "project_path" : "server.R",
+    "properties" : {
+    },
+    "source_on_save" : false,
+    "type" : "r_source"
+}

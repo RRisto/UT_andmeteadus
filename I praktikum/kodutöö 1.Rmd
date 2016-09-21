@@ -1,0 +1,27 @@
+---
+title: "Kodutöö 1"
+author: "Risto Hinno"
+date: "Friday, May 01, 2015"
+output: html_document
+---
+
+#Suurimad tõusjad
+
+```{r, echo=FALSE}
+andmed=read.csv2("aktsiad.csv", sep=";")
+library(dplyr)
+parim_tootlus=andmed %>%
+    select(symbol,nimi, tootlus)%>%
+    arrange(desc(tootlus))%>%
+    head(3)
+library(knitr)
+kable(parim_tootlus)
+```
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

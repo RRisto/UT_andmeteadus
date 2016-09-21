@@ -1,0 +1,22 @@
+{
+    "contents" : "",
+    "created" : 1433611386464.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "C651420B",
+    "lastKnownWriteTime" : 7741240722073845761,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "caption" : "arvestused",
+        "contentUrl" : "content?title=arvestused&file=e41c68ee166c476581436569b14a0425.htm",
+        "displayedObservations" : "1000",
+        "displayedVariables" : 29,
+        "totalObservations" : "1954",
+        "variables" : "28"
+    },
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}

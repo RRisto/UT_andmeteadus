@@ -1,0 +1,17 @@
+{
+    "contents" : "#tk=teaduskond\n#nr=mitu ainet topist kuvatakse välja\n#\nplot_oppeained = function(data, tk, sem, nr, jrk){\n    library(dplyr)\n    data_subset=data %>%\n        subset(teaduskond==tk & semester==sem) %>%\n        mutate(keskmine = (A*5+B*4+C*3+D*2+E*1)/(registreerunuid-mi)) %>%\n        subset(keskmine<=5& keskmine>=0)\n    \n    #paneme järjekorda\n    if (jrk==0) {\n        data_subset=data_subset[order(-data_subset$keskmine),]\n    } else {\n        data_subset=data_subset[order(data_subset$keskmine),]\n        \n    }\n    \n    #hoiame ainult nr arvu ridu alles\n    if (nrow(data_subset)>=nr) {\n    data_subset=data_subset[1:nr,]\n    }\n    #teeme kitsaks andmetabeli\n    library(reshape2)\n    data_subset$mi=NULL\n    data_subset_melt=melt(data_subset, \n                          measure.vars = c(\"A\", \"B\", \"C\", \"D\", \"E\", \"F\"))\n    names(data_subset_melt)[7:8]=c(\"hinne\", \"opilaste_arv\")\n    #teeme ploti  \n    library(ggplot2)\n    ggplot(data_subset_melt, aes(x=reorder(paste(aine, kood),keskmine, median), \n                                 y=opilaste_arv,fill=hinne))+\n        geom_bar(position=\"fill\", stat=\"identity\")+\n        scale_fill_brewer()+\n        xlab(\"\")+\n        ylab(\"\")+\n        coord_flip()\n}\n",
+    "created" : 1433356280781.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1750156627",
+    "id" : "9E687D13",
+    "lastKnownWriteTime" : 1433587940,
+    "path" : "~/Minu asjad/Statistika, mudelid, excel/R/Andmeteadus_TU/III praktikum/Kodutoo_shiny/helpers.R",
+    "project_path" : "helpers.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "source_on_save" : false,
+    "type" : "r_source"
+}

@@ -1,0 +1,22 @@
+{
+    "contents" : "",
+    "created" : 1433701839870.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "3E34A406",
+    "lastKnownWriteTime" : 7741240723082584096,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "caption" : "naive",
+        "contentUrl" : "content?title=naive&file=62a1ea90acdd4b4d9008824daaad6e00.htm",
+        "displayedObservations" : 1000,
+        "displayedVariables" : 2,
+        "totalObservations" : 3992,
+        "variables" : 2
+    },
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}

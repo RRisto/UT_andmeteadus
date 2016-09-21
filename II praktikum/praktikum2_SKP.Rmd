@@ -1,0 +1,210 @@
+---
+title: "SKP ja võlg"
+author: "Risto Hinno"
+date: "Tuesday, May 26, 2015"
+output: html_document
+---
+
+##Sissejuhatus
+
+Kati “Makro” Ökonoomika on tavaline Eesti naine, kes saab kõigega hakkama: ta kasvatab üksi last, maksab koguperelaenu ning töötab Euroopa Komisjoni struktuuriüksuses ametnikuna. 2013. aasta alguses andis Olli Rehn, üks toonastest 28-st Euroopa Komisjoni volinikust, talle ülesandeks uurida võlakoorma mõju majanduskasvule.
+
+Kati teadis, et hea uurimus peab põhinema andmetel mitte ekspertide kõhutundel. Peagi leidis ta artikli Growth in a Time of Debt, mille põhitulemuseks oli, et kõrgem riigivõlg on seotud madalama majanduskasvuga ning väga probemaatiline on riigivõlg, mis on üle 90% SKP-st. Artikkel tundus usaldusväärne, sest artikli autoriteks on tunnustatud majandusteadlased Harvardist, artiklit oli tsiteeritud sel hetkel juba üle 500 korra ning see põhines 50-aastasel perioodil.
+
+Juba 9. aprillil 2013 kasutas Olli Rehn oma kõnes Rahvusvahelisele Tööorganisatsioonile Kati leitut:
+
+_public debt in Europe is expected to stabilise only by 2014 and to do so at above 90% of GDP. Serious empirical research has shown that at such high levels, public debt acts as a permanent drag on growth._
+
+Kati tundis, et ta oma tööd hasti teinud ja unistas aastalõpu boonusest. Tema sisemine rahulolu jäi aga üürikeseks. Majandusteadlased (Herndon, Ash, Pollin, edasises HAP) ülikoolist UMass Amherst avaldasid teadusartikli, kus väitsid, et Reinhart-Rogoffi (edasises RR) metoodikas on tõsiseid vigu sees, alustades Exceli arvutusveast, andmete väljajätmisest ja valest kaalumismeetodist. Majandusteemalised ajalehed olid täis kriitilisi kommentaare, sest Exceli viga on ju hoomatav kõigile.
+
+Moodustati kriisikomisjon, mida pandi juhtima Kati. Vaja on teha suurele hulgale poliitikutele võimalikult lihtsasti selgeks, mille vastu eksisid Reinhart-Rogoff ja kui palju esialgsed tulemused muutusid.
+
+##Tutvumine andmestikuga
+
+20 arenenud riigi kohta on teada SKP kasvunumber ja võlakoorma-SKP suhe aastatel 1946-2009. Andmestikus on järgnevad tunnused:
+
+- riik: mis riigi kohta näitajad on toodud
+
+- aasta: mis aasta kohta käivad SKP kasv ja võlakoorma-SKP suhe
+
+- vola_skp_suhe: võlakoorma ja SKP suhe
+
+- skp_kasv: SKP kasvunumber
+
+- exceli_viga: binaarne tunnus, mis näitab, kas andmepunkt jäi RR analüüsist välja Exceli arvutusvea tõttu (kui on 1, siis jäi välja)
+
+- valikuline: binaarne tunnus, mis näitab, kas andmepunkt jäi RR analüüsist välja (HAP väitel selekteerimise tõttu, RR väitel, et neid andmeid analüüsi tegemise ajal polnud. Kui on 1, siis jäi RR analüüsist välja.)
+
+
+##Ülesanne 1 (2 punkti) - RR ja HAP tulemuste reprodutseerimine
+
+Kontrolli, kas suudad reprodutseerida RR ja HAP tulemused.
+
+Juhised:
+
+- Lisa uus tunnus, mis näitab vola_skp_suhe kategooriat (< 30%, 30-60%, 60-90%, > 90%). Näpunäide: kasuks tuleb käsk cut.
+
+- kaalumisviisid. HAP kaalub igas kategoorias andmepunkte võrdselt (ehk võtab tavalise aritmeetilise keskmise), RR arvutab igas grupis riikide keskmise ja võtab neist aritmeetilise keskmise.
+
+- RR-i tulemuste reprodutseerimiseks jäta arvutustest välja andmepunktid, mis jäid välja Exceli vea tõttu (vt tunnus exceli_viga) ja andmete puudumise tõttu (vt tunnus valikuline).
+
+- RR tegid ka kopeerimisvea: kopeerides riikide keskmisi ühest Exceli tabelist teise, muutus Uus-Meremaa keskmine SKP tõus grupis “> 90%” väärtuselt -7.6 väärtuseks -7.9. (Näpunäide: kasuks tuleb käsk ifelse.)
+
+
+```{r, cache=TRUE, message=FALSE, warning=FALSE}
+library(dplyr)
+andmed=read.csv("./data/skp_ja_volg.csv")
+#lisame tunnuse, mis näitab vola_skp_suhe kategooriat
+miinimum=min(andmed$vola_skp_suhe, na.rm=T)
+maksimum=max(andmed$vola_skp_suhe, na.rm=T)
+andmed$vola_skp_suhe_klass=cut(andmed$vola_skp_suhe, 
+                               breaks=c(miinimum,30,60,90, maksimum), include.lowest=T,
+                               labels=c("< 30%", "30-60%", "60-90%", "> 90%"))
+andmed_grupp= group_by(andmed, vola_skp_suhe_klass)
+#HAPi kaalud
+HAP_tulem=andmed  %>% 
+    group_by(vola_skp_suhe_klass)%>%
+    summarise(HAP_mean = round(mean(skp_kasv, na.rm=T),1),
+              HAP_median=round(median(skp_kasv, na.rm=T),1))
+#RR-i reprodutseerimine
+RR_tulem=andmed_grupp%>% 
+    subset( exceli_viga==0)%>% 
+    subset(valikuline==0)%>% 
+    group_by(vola_skp_suhe_klass,riik)%>% 
+    summarise(SKP_keskmine_kasv= round(mean(skp_kasv, na.rm=T),1),
+          SKP_mediaan_kasv=round(median(skp_kasv, na.rm=T),1))%>% 
+    group_by(vola_skp_suhe_klass)%>% 
+    summarise(RR_mean=round(mean(ifelse(
+        riik=="New Zealand" & SKP_keskmine_kasv==-7.6,-7.9,SKP_keskmine_kasv),na.rm=T),1),
+        RR_median=round(median(SKP_mediaan_kasv),1))
+#tulemid kokku
+tulem=cbind(RR_tulem[1:4,], HAP_tulem[1:4,])
+head(tulem)
+```
+
+##Ülesanne 2 (1 punkt) - visualiseeri võlakoormuse muutumist ajas
+
+Visualiseeri, kuidas võlakoorem on aastate jooksul muutunud riikide lõikes
+```{r, message=FALSE, warning=FALSE, cache=TRUE}
+library(ggplot2)
+ggplot(andmed, aes(x=aasta, y=vola_skp_suhe))+
+    geom_point()+
+    facet_wrap(~riik)+
+    theme_minimal()
+```
+
+##Kuidas efektiivselt visualiseerida …
+
+Järgnevalt püüame leida parima viisi, kuidas efektiivselt visualiseerida
+
+- millised vaatlused jäid RR analüüsist välja
+
+- kuivõrd erinesid RR ja HAP analüüside tulemused
+
+- kas võlakoormus suurem kui 90% on maagilise tähtsusega (st kas piir on just täpselt 90%)
+
+- milline on seos SKP ja võlakoormuse vahel
+
+##Ülesanne 3 (1 punkt) - millised vaatlused jäid RR analüüsist välja
+
+```{r, cache=TRUE}
+pole=subset(andmed, exceli_viga==1| valikuline==1)
+head(pole)
+```
+
+##Boonusülesanne (2 punkti) - kuidas erinesid RR ja HAP analüüside tulemused
+
+```{r, cache=TRUE}
+library(reshape2)
+tulem_melt=melt(tulem, id=c("vola_skp_suhe_klass"))
+tulem_melt_median=tulem_melt[grepl("median", tulem_melt$variable),]
+tulem_melt_mean=tulem_melt[grepl("mean", tulem_melt$variable),]
+
+ggplot(tulem_melt_median, aes(x=vola_skp_suhe_klass, y=value, fill=variable)) + 
+    geom_bar(position="dodge", stat="identity")
+
+ggplot(tulem_melt_mean, aes(x=vola_skp_suhe_klass, y=value, fill=variable)) + 
+    geom_bar(position="dodge", stat="identity")
+
+```
+
+##Ülesanne 4 (2 punkti) - kas võlakoormus suurem kui 90% on maagilise tähtsusega
+
+```{r, cache=TRUE}
+andmed2=andmed
+andmed2$vola_skp_suhe_klass=cut(andmed2$vola_skp_suhe, 
+                               breaks=c(miinimum,30,60,90,120, maksimum), include.lowest=T,
+                               labels=c("< 30%", "30-60%", "60-90%", "90-120%", "> 120%"))
+
+andmed_grupp2= group_by(andmed2, vola_skp_suhe_klass)
+
+RR_tulem2=andmed_grupp2%>% 
+    subset( exceli_viga==0)%>% 
+    subset(valikuline==0)%>% 
+    group_by(vola_skp_suhe_klass,riik)%>% 
+    summarise(SKP_keskmine_kasv= round(mean(skp_kasv, na.rm=T),1),
+              SKP_mediaan_kasv=round(median(skp_kasv, na.rm=T),1))%>% 
+    group_by(vola_skp_suhe_klass)%>% 
+    summarise(RR_mean=round(mean(ifelse(
+        riik=="New Zealand" & SKP_keskmine_kasv==-7.6,-7.9,SKP_keskmine_kasv),na.rm=T),1),
+        RR_median=round(median(SKP_mediaan_kasv),1))
+RR_tulem2
+```
+
+##Ülesanne 5 (4 punkti) - Kuidas visuaalselt uurida, milline on seos SKP ja võlakoormuse vahel?
+
+Kõigepealt, tehke joonis, kus oleks näha seos SKP ja võlakoormuse vahel. Seose iseloomustamiseks võite kasutada stat_smooth() abil leitavat joont.
+
+Näinud seost andmestikus, tekib küsimus, ega see seos ei ole lihtsalt juhuslik. Ehk kas vaadeldud seos erineb oluliselt seostest sellistes andmestikes, kus tegelikult SKP ja võlakoormuse vahel mingisugust seost ei eksisteeri.
+
+
+```{r, cache=TRUE, warning=FALSE, message=FALSE}
+ggplot(andmed, aes(x=vola_skp_suhe, y=skp_kasv))+
+    geom_point()+
+    stat_smooth()
+```
+
+Selle visuaalseks kontrollimiseks võime kasutada järgmist skeemi. See põhineb permutatsioonitestil, mille kohta vaadake esmalt kodutöö osa III [videot](https://www.youtube.com/watch?v=5Dnw46eC-0o)
+
+Skeem:
+
+- Nullhüpotees on, et SKP ja riigivõla vahel seos puudub.
+
+- Genereerime meie andmetest permuteerimise teel sellise andmestiku, mis vastab nullhüpoteesile. Näiteks võib fikseerida SKP väärtused ning neile vastavusse seatavad riigivõla väärtused permuteerida. (Näpunäide: permuteerimisel on kasuks funktsioon sample.)
+
+```{r, cache=TRUE, warning=FALSE, message=FALSE}
+#jätame alles read, kus pole NAd SKP kasvus ja võla SKP suhtes
+andmed_permut=andmed[!is.na(andmed$vola_skp_suhe)&!is.na(andmed$skp_kasv),]
+
+#permuteerime vola_skp_suhe väärtuseid
+andmed_permut$iter1=sample(andmed_permut$vola_skp_suhe, replace=T)
+
+plot_permut=ggplot(andmed_permut, aes(x=vola_skp_suhe, y=skp_kasv))+
+    geom_point()+
+    stat_smooth(aes(x=iter1, y=skp_kasv), colour="grey")
+
+#jätame ainult vajaliku alles
+andmed_permut=andmed_permut[, c("vola_skp_suhe","skp_kasv","iter1" )]
+andmed_permut_iter=andmed_permut
+
+#graafik itereerimiseks
+plot_permut_iter=ggplot(andmed_permut_iter, aes(x=vola_skp_suhe, y=skp_kasv))+
+    geom_point()+
+    stat_smooth()
+
+plot_permut_iter=plot_permut_iter+stat_smooth(aes(x=iter1, y=skp_kasv), colour="grey")
+
+#nüüd tuleb seda 100 korda teha
+#library(ggplot2) lisaks tuleb esimene graafik valmis teha
+j=4
+for (i in 1:100) {
+    andmed_permut_iter[,j]=sample(andmed_permut_iter$vola_skp_suhe, replace=T)
+    plot_permut_iter=plot_permut_iter+stat_smooth(aes(x=andmed_permut_iter[,j], 
+                                                      y=skp_kasv), colour="grey")
+    j+1
+}
+ 
+plot_permut_iter
+```
+
+muidu opereerib hästi, kuid siin teeb jama

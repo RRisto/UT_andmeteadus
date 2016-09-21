@@ -1,0 +1,22 @@
+{
+    "contents" : "",
+    "created" : 1430495134294.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "995072A8",
+    "lastKnownWriteTime" : 7741240723082584096,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "caption" : "proov",
+        "contentUrl" : "content?title=proov&file=2906cf4e557d41dda671ffa355f70a61.htm",
+        "displayedObservations" : "502",
+        "displayedVariables" : 9,
+        "totalObservations" : "502",
+        "variables" : "10"
+    },
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}

@@ -1,0 +1,194 @@
+---
+title: "KUidas tuvastada pettust?"
+author: "Risto Hinno"
+date: "Tuesday, May 26, 2015"
+output: html_document
+---
+
+
+##Sissejuhatus
+
+Markus “Märul” Veekahuri isa on politseinik, ema on politseinik, mõlemad vanaemad on politseinikud ja õde on politseinik. Algul vaadati viltuselt Markuse soovile ülikooli statistikat õppima minna, kuid pärast kahte kuud vaikimist vahetati telefoni teel esimene “tere” ning lepiti uuesti ära.
+
+Kuid nagu elus ikka, ei kuku käbi kännust kaugele. Markus läks tööle Politsei- ja Piirivalveametisse ning tema igapäevatööks sai pettuste tuvastamine, kasutades statistilisi meetodeid. Tema ametirelvaks on Benfordi seadus.
+
+Benfordi seadus (sageli nimetatud kui esimese numbri seadus) kirjeldab arvu esimese numbri sagedust. Paljudes reaalsetes andmetes esineb number 1 esinumbrina umbes 30% juhtudest ning iga järgneva numbri sagedus kahaneb monotoonselt.
+
+##Maksude andmestik
+
+Loe sisse Maksu- ja Tolliameti maksude andmestik ja tutvu andmetega. Andmestikus on järgnevad tunnused:
+
+- registrikood: juriidilise isiku registrikood
+
+- nimi: juriidilise isiku nimi
+
+- liik: kas tegemist on äriühingu, MTÜ, FIE vms
+
+- kaibemaksukohustlane: kas juriidiline isik on käibemaksukohustlane
+
+- maakond: millises maakonnas on juriidiline isik registreeritud
+
+- riiklikud_maksud: käibemaks, tollimaks jne
+
+- toojoumaksud_ja_maksed: sotsiaalmaks, töötuskindlustusmakse jne
+
+##Ülesanne 1 (2 punkti)
+
+Tee 3 joonist, mis iseloomustavad hästi seda andmestikku.
+
+```{r, cache=TRUE, warning=FALSE, message=FALSE}
+maksud=read.csv2("./data/tolliamet_maksud.csv")
+maksud$riiklikud_maksud=as.numeric(as.character(maksud$riiklikud_maksud))
+maksud$toojoumaksud_ja_maksed=as.numeric(as.character(
+    maksud$toojoumaksud_ja_maksed))
+
+library(ggplot2)
+#maakonna keskmised
+library(dplyr)
+library(reshape2)
+maksud_maakond_group=maksud %>%
+    group_by(maakond)%>%
+summarise(kesk_riiklikud_maksud= mean(riiklikud_maksud, na.rm=T),
+          mediaan_riiklikud_maksud=median(riiklikud_maksud, na.rm=T),
+          kesk_tööjõumaksud= mean(toojoumaksud_ja_maksed, na.rm=T),
+          mediaan_tööjõumaksud=median(toojoumaksud_ja_maksed, na.rm=T))%>%
+    melt(id.vars="maakond")
+
+ggplot(maksud_maakond_group, aes(x=maakond, y=value))+
+    geom_point()+
+    facet_wrap(~variable)+
+    theme(axis.text.x  = element_text(angle=90, vjust=0.5))
+
+#jur vormi keskmised
+maksud_liik_group=maksud %>%
+    group_by(liik)%>%
+    summarise(kesk_riiklikud_maksud= mean(riiklikud_maksud, na.rm=T),
+              mediaan_riiklikud_maksud=median(riiklikud_maksud, na.rm=T),
+              kesk_tööjõumaksud= mean(toojoumaksud_ja_maksed, na.rm=T),
+              mediaan_tööjõumaksud=median(toojoumaksud_ja_maksed, na.rm=T))%>%
+    melt(id.vars="liik")
+
+ggplot(maksud_liik_group, aes(x=liik, y=value/1000))+
+    geom_point()+
+    facet_wrap(~variable)+
+    theme_minimal()+
+    theme(axis.text.x  = element_text(angle=90, vjust=0.5))
+maksud_sort=maksud%>%
+    mutate(summa=riiklikud_maksud+toojoumaksud_ja_maksed)%>%
+    arrange(-summa)
+#see on selleks, et ggplot kuvaks maksude järjekorras, mitte tähestikulises 
+#järjekorras
+maksud_sort$nimi <- as.character(maksud_sort$nimi)
+#Then turn it back into an ordered factor
+maksud_sort$nimi <- factor(maksud_sort$nimi, levels=unique(maksud_sort$nimi))
+
+ggplot(subset(maksud_sort, liik!="Valitsus- ja riigiasutus")[1:20,], 
+       aes(x=nimi, y=summa/100000))+
+    geom_bar(stat="identity")+
+    scale_y_reverse()+
+    theme(axis.text.x  = element_text(angle=90, vjust=0.5))+
+    coord_flip()
+   
+    
+```
+
+##Ülesanne 2 (2 punkti)
+
+Kontrolli visuaalselt Benfordi seaduse kehtimist tunnustel riiklikud maksud ja toojoumaksud ja maksed. Selleks tekita esinumbrite histogramm. Nulliga võrduvad väärtused jäta kõrvale. Tee vastav joonis ka FIE-de, äriühingute jne lõikes (vt tunnus liik).
+
+Näpunäide: esimest numbrit aitab eralda näiteks funktsioon substr.
+
+```{r, warning=FALSE, message=FALSE, cache=TRUE}
+#lõikame esimese numbri maha
+maksud_sort$esimene_nr_riikl=substr(maksud_sort$riiklikud_maksud, 1, 1)
+maksud_sort$esimene_nr_tooj=substr(maksud_sort$toojoumaksud_ja_maksed, 1, 1)
+
+#riiklike maksude osas
+library(ggplot2)
+kokku_count=nrow(subset(maksud_sort,esimene_nr_riikl!=0))
+maksud_sort2=subset(maksud_sort,esimene_nr_riikl!=0)
+library(dplyr)
+maksud_sort2=maksud_sort2 %>%
+    group_by(esimene_nr_riikl) %>%
+    summarise(osakaal=n()/kokku_count)
+
+library(BenfordTests)
+#Benfordi seadusele vastav jaotus
+benford=as.data.frame(pbenf(digits = 1))
+
+ggplot(maksud_sort2, aes(x=factor(esimene_nr_riikl), y=osakaal, group=1))+
+    geom_point(colour="red")+
+    geom_line()+
+    geom_line(data=benford, aes(x=Var1, y=Freq,group=1), colour="red")
+#lõikame esimese numbri maha
+maksud_sort$esimene_nr_riikl=substr(maksud_sort$riiklikud_maksud, 1, 1)
+maksud_sort$esimene_nr_tooj=substr(maksud_sort$toojoumaksud_ja_maksed, 1, 1)
+
+#riiklike maksude osas
+library(ggplot2)
+kokku_count=nrow(subset(maksud_sort,esimene_nr_riikl!=0))
+maksud_sort2=subset(maksud_sort,esimene_nr_riikl!=0)
+library(dplyr)
+maksud_sort2=maksud_sort2 %>%
+    group_by(esimene_nr_riikl) %>%
+    summarise(osakaal=n()/kokku_count)
+
+library(BenfordTests)
+#Benfordi seadusele vastav jaotus
+benford=as.data.frame(pbenf(digits = 1))
+
+ggplot(maksud_sort2, aes(x=factor(esimene_nr_riikl), y=osakaal, group=1))+
+    geom_point(colour="red")+
+    geom_line()+
+    geom_line(data=benford, aes(x=Var1, y=Freq,group=1), colour="red")
+#liikide lõikes tööjõumaksud
+kokku_count_too=nrow(subset(maksud_sort,esimene_nr_tooj!=0))
+maksud_sort4=subset(maksud_sort,esimene_nr_tooj!=0)
+#arvutame iga liigi counti ja siis iga liigi iga algusnumbri count ja 
+#osakaalu
+library(dplyr)
+maksud_sort4=maksud_sort4 %>%
+    group_by(liik) %>%
+    mutate(count=n())%>%
+    group_by(liik,esimene_nr_tooj) %>%
+    mutate(count_grupp=n(), 
+           osakaal_grupp=count_grupp/count)
+
+library(BenfordTests)
+#Benfordi seadusele vastav jaotus
+benford=as.data.frame(pbenf(digits = 1))
+
+ggplot(subset(maksud_sort4, liik!="Eestis asuv rahvusvaheline organisatsioon"), 
+       aes(x=factor(esimene_nr_tooj), y=osakaal_grupp, group=1))+
+    geom_point(colour="red")+
+    geom_line()+
+    xlab("Algusnumber")+
+    ylab("Esinemissagedus")+
+    geom_line(data=benford, aes(x=Var1, y=Freq,group=1), colour="red")+
+    facet_wrap(~liik)
+
+##liikide riiklikud maksud
+kokku_count_riikl=nrow(subset(maksud_sort,esimene_nr_riikl!=0))
+maksud_sort5=subset(maksud_sort,esimene_nr_riikl!=0)
+#arvutame iga liigi counti ja siis iga liigi iga algusnumbri count ja 
+#osakaalu
+library(dplyr)
+maksud_sort5=maksud_sort5 %>%
+    group_by(liik) %>%
+    mutate(count=n())%>%
+    group_by(liik,esimene_nr_riikl) %>%
+    mutate(count_grupp=n(), 
+           osakaal_grupp=count_grupp/count)
+
+ggplot(subset(maksud_sort5, liik!="Eestis asuv rahvusvaheline organisatsioon"), 
+              aes(x=factor(esimene_nr_riikl), y=osakaal_grupp, group=1))+
+    geom_point(colour="red")+
+    geom_line()+
+    geom_line(data=benford, aes(x=Var1, y=Freq,group=1), colour="red")+
+    facet_wrap(~liik)
+
+```
+
+Kommenteeri tulemusi.
+
+Kas sellest võib järeldada, et FIE-d jahmerdavad maksudega?

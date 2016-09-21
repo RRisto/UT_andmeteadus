@@ -1,0 +1,22 @@
+{
+    "contents" : "",
+    "created" : 1432700765069.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "9F99B8AC",
+    "lastKnownWriteTime" : 7741240723082584096,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "caption" : "alg",
+        "contentUrl" : "content?title=alg&file=ef24df1c9a944e4eb291c5cfd1e7bbe0.htm",
+        "displayedObservations" : 1,
+        "displayedVariables" : 7,
+        "totalObservations" : 1,
+        "variables" : 6
+    },
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}

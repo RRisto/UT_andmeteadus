@@ -1,0 +1,7 @@
+base
+dplyr
+knitr
+zoo
+xts
+TTR
+quantmod

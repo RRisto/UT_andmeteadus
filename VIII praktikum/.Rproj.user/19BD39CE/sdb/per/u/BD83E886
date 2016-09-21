@@ -1,0 +1,17 @@
+{
+    "contents" : "values=rnorm(10000, mean=0, sd=1)\nvalues=data.frame(values)\n\nvalues2=rnorm(10000, mean=2, sd=1)\nvalues2=data.frame(values2)\n\n\nlibrary(ggplot2)\nggplot(values, aes(x=values))+\n    geom_density()+\n    geom_density(data=values2, aes(x=values2), \n                 colour=\"blue\", fill=\"blue\", alpha=0.2)",
+    "created" : 1434745847074.000,
+    "dirty" : true,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "1840429265",
+    "id" : "BD83E886",
+    "lastKnownWriteTime" : 3475616,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "source_on_save" : false,
+    "type" : "r_source"
+}
